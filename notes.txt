@@ -1,0 +1,1 @@
+To load into virtual environment created from VSCode, use "source .venv/bin/activate"   
