@@ -1,1 +1,2 @@
 To load into virtual environment created from VSCode, use "source .venv/bin/activate"   
+To create a new virtual environment, use "python3 -m venv .venv"
