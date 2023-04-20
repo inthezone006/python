@@ -1,6 +1,7 @@
 import platform as pf
 import people
 import car
+import requests
 
 #Module and Class Example #1
 def test1():

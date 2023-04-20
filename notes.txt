@@ -1,2 +1,4 @@
 To load into virtual environment created from VSCode, use "source .venv/bin/activate"   
 To create a new virtual environment, use "python3 -m venv .venv"
+To create a web server, user "python3 -m http.server"
+To run flask file, use "flask --app file run --debug" (set for windows, not export)
