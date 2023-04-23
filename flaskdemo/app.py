@@ -9,11 +9,11 @@ def home():
 
 @app.route("/user/<username>")
 def account(username):
-    return f'Welcome, {username}! This is your page.'
+    return render_template('account.html', username = username)
 
 @app.route("/<code>")
 def codeError(code):
-    return f"Invalid location \'{escape(code)}\'"
+    return f"Invalid location \'{code}\'"
 
 @app.get("/signin")
 def signin():
