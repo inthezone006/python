@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from markupsafe import escape
 
 app = Flask(__name__)
@@ -19,6 +19,18 @@ def codeError(code):
 def signin():
     return "<script>var test = window.prompt(\'input something\')</script>"
 
-@app.post("/signin")
-def signedIn():
-    return "signed in!"
+#@app.route("/signup")
+#def signedIn():
+#    return "user successfully created!"
+
+@app.route("/signup", methods=['PUT'])
+def createUser():
+    request_body = request.get_json()
+
+    newUser = {
+        'name': request_body['name'],
+        'age': request_body['age'],
+        'job': request_body['job']
+    }
+
+    return jsonify(newUser)
