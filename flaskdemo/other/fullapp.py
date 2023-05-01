@@ -16,6 +16,10 @@ users = [
     }
 ]
 
+@app.route("/")
+def goHome():
+    return "<h1>Home page</h1>"
+
 @app.route("/users", methods=['GET'])
 def getResponse():
     return jsonify({'users':users})
@@ -65,4 +69,3 @@ def deleteUser(username):
             return jsonify({'success': 'user deleted'})
 
     return jsonify({'error': 'user not found'})
-
