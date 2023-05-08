@@ -69,3 +69,6 @@ def deleteUser(username):
             return jsonify({'success': 'user deleted'})
 
     return jsonify({'error': 'user not found'})
+
+if __name__ == "__main__":
+    app.run(debug=True)

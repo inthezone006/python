@@ -40,3 +40,6 @@ api.add_resource(Account, '/account/<int:number>/<string:name>')
 @app.route("/", methods=['GET'])
 def home_page():
     return render_template("index.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
