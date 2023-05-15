@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head dir="ltr">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <title>Home</title>
+    </head>
+    <body>
+        <footer>Application state: {{ status }}</footer>
+        <form method="post">
+            <label for="selectUser">Choose a user: </label>
+            <select id="selectUser" name="selectUser" required>
+                {% for user in usersList %}
+                    <option>{{user}}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+            <label for="pass">Password: </label>
+            <input type="password" id="pass" name="pass" required>
+            <br><br>
+            <input type="submit" id="submitButton" value="Sign In">
+            <!-- <input type="button" id="createButton" value="Create Account" onclick="createAcc();"> -->
+        </form>
+    </body>
+</html>
