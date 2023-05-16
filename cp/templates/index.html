@@ -18,7 +18,14 @@
             <input type="password" id="pass" name="pass" required>
             <br><br>
             <input type="submit" id="submitButton" value="Sign In">
-            <!-- <input type="button" id="createButton" value="Create Account" onclick="createAcc();"> -->
+            <input type="button" id="createButton" value="Create Account" onclick>
+            {% with messages = get_flashed_messages()%}
+                {% if messages%}
+                    {% for message in messages%}
+                        <p>{{message}}</p>
+                    {%endfor%}
+                {%endif%}
+            {%endwith%}
         </form>
     </body>
 </html>
