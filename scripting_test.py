@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the data from CSV file
-df_4000 = pd.read_csv('AlAs_4x4.csv')
+df_4000 = pd.read_csv('InAs_4x4_square.csv')
 
 # Assuming the CSV file has 'x' and 'y' columns
 x_4000 = df_4000['x']
@@ -42,10 +42,10 @@ for i, y_vals_4000 in enumerate(y_4000_selected):
     plt.plot([x_600[i]] * len(y_vals_4000), y_vals_4000, 'ro', alpha=0.5)
     plt.plot([x_600[i]] * len(y_vals_600), y_vals_600, 'bo', alpha=0.5)
 
-plt.title('Comparison of MS_basis_final_Ek_reduced vs. AlAs_4x4 with multiple y values')
+plt.title('Comparison of MS_basis_final_Ek_reduced vs. InAs_4x4_square with multiple y values')
 plt.xlabel('X')
 plt.ylabel('Y')
-plt.legend(['AlAs_4x4', 'MS_basis_final_Ek_reduced'])
+plt.legend(['InAs_4x4_square', 'MS_basis_final_Ek_reduced'])
 plt.show()
 
 # Calculate and print mean accuracy on a 0-5 scale
