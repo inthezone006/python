@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load the data from CSV file
-df_4000 = pd.read_csv('InAs_4x4_square.csv')
+df_4000 = pd.read_csv('6x6_InP_bands.csv')
 
 # Assuming the CSV file has 'x' and 'y' columns
 x_4000 = df_4000['x']
@@ -11,45 +11,61 @@ y_4000 = df_4000['y']
 
 # Load the 600 points from a .dat file
 # Assuming the .dat file has two columns (x and y) and space or tab-separated values
-data_600 = np.loadtxt('MS_basis_final_Ek_reduced.dat')  # Adjust delimiter if necessary
+data_600 = np.loadtxt('InP_4x4_50_elem_120_Ek.dat')  # Adjust delimiter if necessary
 x_600 = data_600[:, 0]
 y_600 = data_600[:, 1]
 
-# Find the indices of the matching x-values from the 600-point dataset in the 4000-point dataset
-indices_4000 = [np.argmin(np.abs(x_4000 - x)) for x in x_600]
+# Get the range of x-values from the 600-point dataset
+x_min_600 = np.min(x_600)
+x_max_600 = np.max(x_600)
 
-# Extract the corresponding y-values from the 4000-point file for each x in 600 points
-y_4000_selected = []
-for idx in indices_4000:
-    # Here we collect all y-values for the matching x in the 4000-point dataset
-    x_val = x_4000.iloc[idx]
-    y_vals_at_x = df_4000[df_4000['x'] == x_val]['y'].values
-    y_4000_selected.append(y_vals_at_x)
+# Filter the 4000-point dataset to include only x-values within the range of the 600-point dataset
+x_4000_filtered = x_4000[(x_4000 >= x_min_600) & (x_4000 <= x_max_600)]
+y_4000_filtered = y_4000[(x_4000 >= x_min_600) & (x_4000 <= x_max_600)]
 
-# Calculate the accuracy by comparing multiple y-values at each x
-accuracy_list = []
-for i, y_vals_4000 in enumerate(y_4000_selected):
-    y_vals_600 = data_600[data_600[:, 0] == x_600[i], 1]
+# Check if there are any points in the 4000-point dataset within the range
+if len(x_4000_filtered) == 0:
+    print("No x-values from the 4000-point dataset fall within the range of the 600-point dataset.")
+else:
+    # Compare points that are within the range
+    accuracy_list = []
     
-    # Here, we can compare the mean or median or use some other method to find accuracy
-    mean_diff = np.mean(np.abs(np.mean(y_vals_600) - np.mean(y_vals_4000)))
-    accuracy = 1 - (mean_diff / np.max(y_vals_600))  # Normalize the accuracy
-    accuracy_list.append(accuracy)
+    # Loop over the x-values from the 600-point dataset
+    for i, x_val_600 in enumerate(x_600):
+        # Find the y-values from the filtered 4000-point dataset that are closest to the current x_val_600
+        y_vals_4000_in_range = y_4000_filtered[np.abs(x_4000_filtered - x_val_600).argmin()]
 
-# Plot the comparison
-plt.figure(figsize=(10, 6))
-for i, y_vals_4000 in enumerate(y_4000_selected):
-    plt.plot([x_600[i]] * len(y_vals_4000), y_vals_4000, 'ro', alpha=0.5)
-    plt.plot([x_600[i]] * len(y_vals_600), y_vals_600, 'bo', alpha=0.5)
+        # Compare the y-values for the current x_val_600 and corresponding y-values from the 4000-point dataset
+        y_vals_600 = y_600[i]
+        
+        # Ensure that y-values are valid (non-empty)
+        if len(np.array([y_vals_4000_in_range])) > 0:
+            mean_diff = np.mean(np.abs(y_vals_600 - y_vals_4000_in_range))
 
-plt.title('Comparison of MS_basis_final_Ek_reduced vs. InAs_4x4_square with multiple y values')
-plt.xlabel('X')
-plt.ylabel('Y')
-plt.legend(['InAs_4x4_square', 'MS_basis_final_Ek_reduced'])
-plt.show()
+            # Check for division by zero and ensure valid accuracy calculation
+            if np.max(y_vals_600) != 0:
+                accuracy = 1 - (mean_diff / np.max(y_vals_600))  # Normalize the accuracy
+                accuracy_list.append(accuracy)
+            else:
+                accuracy_list.append(0)  # Handle edge case of max(y_vals_600) being 0
+        else:
+            accuracy_list.append(0)  # Handle case where y-values are empty or missing
 
-# Calculate and print mean accuracy on a 0-5 scale
-mean_accuracy = np.mean(accuracy_list) * 100  # Convert to percentage
-mean_accuracy_0_5_scale = 5 - (mean_accuracy / 20)  # Transform to 0-5 scale
+    # Plot the comparison
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_4000_filtered, y_4000_filtered, 'ro', alpha=0.5, label='4000-point dataset')
+    plt.plot(x_600, y_600, 'bo', alpha=0.5, label='600-point dataset')
 
-print(f'Mean accuracy on 0-5 scale: {mean_accuracy_0_5_scale:.2f}')
+    plt.title('Comparison of MS_basis_final_Ek_reduced vs. InAs_4x4_square within x range')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.legend()
+    plt.show()
+
+    # Calculate and print mean accuracy on a 0-5 scale if there are valid accuracy values
+    if len(accuracy_list) > 0:
+        mean_accuracy = np.mean(accuracy_list) * 100  # Convert to percentage
+        mean_accuracy_0_5_scale = 5 - (mean_accuracy / 20)  # Transform to 0-5 scale
+        print(f'Mean accuracy on 0-5 scale: {mean_accuracy_0_5_scale:.2f}')
+    else:
+        print("No valid accuracy values could be calculated.")
