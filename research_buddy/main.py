@@ -76,17 +76,18 @@
 # TODO: Allow for users/projects to be part of multiple departments
 # TODO: Discussion of transactions, concurrent access to data, and choice of isolation levels
 # TODO: Requirement 1: An interface that allows users to add, edit, and delete data in one main table (edit account)
-# TODO: Requirement 2: A report interface that allows a user (admin) to select which data to display in report (admin: report all users, professors: report all projects)
+# TODO: Requirement 2: A report interface that allows a user (admin) to select which data to 
+# display in report (admin: report all users, professors: report all projects)
+# TODO: Use session.pop('username', None); if 'user_id' in session:; return redirect(url_for('signin'))
 
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, session
 import mysql.connector
+import json
 
-cnx = mysql.connector.connect(
-    host="localhost",              # or your server's host
-    user="",    # your MySQL username
-    password="your_mysql_password",# your MySQL password
-    database="your_database_name"  # the database where the accounts table is located
-)
+with open('research_buddy/config.json') as config_file:
+    db_config = json.load(config_file)
+cnx = mysql.connector.connect(**db_config)
+cursor = cnx.cursor()
 
 app = Flask(__name__)
 
@@ -106,11 +107,14 @@ def signin():
     if request.method == 'GET':
         return "<title>Sign In</title><button onclick='history.back()'><<</button>" \
         "<center><h1>Sign In</h1><p><form method='POST'>Username: <input type='text' name='username'>" \
-        "<br><br>Password: <input type='password' name='password' required><br><br><button type='submit'>Submit</button></form></p></center>"
-    else:
-        username = request.form['username'].strip()
+        "<br><br>Password: <input type='password' name='password' required>" \
+        "<br><br><button type='submit'>Submit</button></form></p></center>"
+    
+    elif request.method == 'POST':
+        username = request.form['username']
         password = request.form['password']
-        return f"<h1>Welcome, {username}!</h1>"
+        session['username'] = username
+        return f"({username}, {password})"
     
 
 @app.route("/signup", methods=['GET', 'POST'])    
