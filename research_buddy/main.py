@@ -79,6 +79,14 @@
 # TODO: Requirement 2: A report interface that allows a user (admin) to select which data to display in report (admin: report all users, professors: report all projects)
 
 from flask import Flask, request, render_template, redirect, url_for
+import mysql.connector
+
+cnx = mysql.connector.connect(
+    host="localhost",              # or your server's host
+    user="",    # your MySQL username
+    password="your_mysql_password",# your MySQL password
+    database="your_database_name"  # the database where the accounts table is located
+)
 
 app = Flask(__name__)
 
