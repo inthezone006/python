@@ -23,7 +23,7 @@
 # (PK, FK student_id REFERENCES accounts.id, INT) id
 # (NOT NULL, CONSTRAINT CHK_STATUS CHECK (status='undergraduate' OR status='graduate'), VARCHAR(13)) status
 # 
-# departments (Holds all departments (majors), editable by the admin) - index[id]
+# departments (Holds all departments/majors) - index[id]
 # (PK, INT) id
 # (NOT NULL, UNIQUE, VARCHAR(255)) name
 # 
@@ -78,14 +78,15 @@
 # TODO: Requirement 1: An interface that allows users to add, edit, and delete data in one main table (edit account)
 # TODO: Requirement 2: A report interface that allows a user (admin) to select which data to 
 # display in report (admin: report all users, professors: report all projects)
-# TODO: Use session.pop('username', None); if 'user_id' in session:; return redirect(url_for('signin'))
+# TODO: New user creation must add to both accounts and the appropriate table (admin/professor/student)
 
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, request, redirect, url_for, session
 import mysql.connector
 import json
 
 with open('research_buddy/config.json') as config_file:
     db_config = json.load(config_file)
+
 cnx = mysql.connector.connect(**db_config)
 cursor = cnx.cursor()
 
@@ -112,25 +113,27 @@ def signin():
         "<br><br><button type='submit'>Submit</button></form></p></center>"
     
     elif request.method == 'POST':
-        username = request.form.get('username', '').strip()
+        username = request.form.get('username', '')
         password = request.form.get('password', '')
-        query = "SELECT id, username, password FROM accounts WHERE username = %s"
-        cursor.execute(query, (username,))
-        user = cursor.fetchone()
+        query = "SELECT * FROM accounts WHERE username = %s AND password = %s"
+        cursor.execute(query, (username, password))
+        response = cursor.fetchone()
         
-        if not user:
-            return "<script>window.alert('Invalid username');" \
-            "window.location.href = '/home';</script>"
-        
-        stored_id, stored_username, stored_password = user
-        
-        if password != stored_password:
-            return "<script>window.alert('Invalid password');" \
-            "window.location.href = '/home';</script>"
+        if not response:
+            return "<script>window.alert('Invalid username or password! Please try again.');" \
+            "window.location.href = '/signin';</script>"
     
-        session['user_id'] = stored_id
-        session['username'] = stored_username
-        return f"({username}, {password})"
+        session['id'] = response[0]
+        session['username'] = response[1]
+        session['password'] = response[2]
+        session['first'] = response[3]
+        session['last'] = response[4]
+        session['email'] = response[5]
+        session['resume'] = response[6]
+        session['linkedin'] = response[7]
+        session['status'] = response[8]
+
+        return redirect(url_for('dashboard'))
     
 
 @app.route("/signup", methods=['GET', 'POST'])    
@@ -140,7 +143,7 @@ def signup():
         "<center><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
         "<p><form method='POST'>*Username: <input type='text' name='username'>" \
         "<br><br>*Password: <input type='password' name='password' required>" \
-        "<br><br>*Confirm Password: <input type='password' name='password2' required>" \
+        "<br><br>*Confirm password: <input type='password' name='password2' required>" \
         "<br><br>*First name: <input type='text' name='first' required>" \
         "<br><br>*Last name: <input type='text' name='last' required>" \
         "<br><br>*Email: <input type='text' name='email' required>" \
@@ -156,10 +159,30 @@ def signup():
 
 @app.route("/dashboard")    
 def dashboard():
-    if 'username' in session:
-        return "<title>Dashboard</title><center><h1>Home</h1></center>"
+    if 'id' in session:
+        extra_button = ""
+        if session['status'] == 'admin':
+            extra_button = "<button onclick=\"window.location.href='/admin';\">Admin Dashboard</button>"
+        return f"<title>Dashboard</title><center><h1>Home</h1> \
+        <p>Welcome, {session['first']} {session['last']}!</p> \
+        <button onclick=\"window.location.href='/edit';\">Edit Account</button> \
+        <button onclick=\"window.location.href='/logout';\">Sign Out</button></center>"
+    
     else:
         return redirect(url_for('home'))
+    
+@app.route("/edit", methods=['GET', 'POST'])
+def edit():
+    if request.method == "GET":
+        return "GET ON EDIT"
+    
+    elif request.method == "POST":
+        return "POST ON EDIT"
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
 
 if __name__=="__main__":
     app.run(debug=True)
