@@ -1,2 +1,3 @@
 .venv/
 research_buddy/config.json
+research_buddy/config.py

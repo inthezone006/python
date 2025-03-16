@@ -90,6 +90,7 @@ cnx = mysql.connector.connect(**db_config)
 cursor = cnx.cursor()
 
 app = Flask(__name__)
+app.config.from_pyfile('config.py')
 
 @app.route("/")
 def main():
@@ -105,21 +106,60 @@ def home():
 @app.route("/signin", methods=['GET', 'POST'])    
 def signin():
     if request.method == 'GET':
-        return "<title>Sign In</title><button onclick='history.back()'><<</button>" \
+        return "<title>Sign In</title><button onclick=\"window.location.href='/home';\"><<</button>" \
         "<center><h1>Sign In</h1><p><form method='POST'>Username: <input type='text' name='username'>" \
         "<br><br>Password: <input type='password' name='password' required>" \
         "<br><br><button type='submit'>Submit</button></form></p></center>"
     
     elif request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        session['username'] = username
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        query = "SELECT id, username, password FROM accounts WHERE username = %s"
+        cursor.execute(query, (username,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return "<script>window.alert('Invalid username');" \
+            "window.location.href = '/home';</script>"
+        
+        stored_id, stored_username, stored_password = user
+        
+        if password != stored_password:
+            return "<script>window.alert('Invalid password');" \
+            "window.location.href = '/home';</script>"
+    
+        session['user_id'] = stored_id
+        session['username'] = stored_username
         return f"({username}, {password})"
     
 
 @app.route("/signup", methods=['GET', 'POST'])    
 def signup():
-    return "<title>Sign Up</title><button onclick='history.back()'><<</button><h1>Sign Up</h1>"
+    if request.method == "GET":
+        return "<title>Sign Up</title><button onclick=\"window.location.href='/home';\"><<</button>" \
+        "<center><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
+        "<p><form method='POST'>*Username: <input type='text' name='username'>" \
+        "<br><br>*Password: <input type='password' name='password' required>" \
+        "<br><br>*Confirm Password: <input type='password' name='password2' required>" \
+        "<br><br>*First name: <input type='text' name='first' required>" \
+        "<br><br>*Last name: <input type='text' name='last' required>" \
+        "<br><br>*Email: <input type='text' name='email' required>" \
+        "<br><br>Resume: <input type='text' name='resume'>" \
+        "<br><br>LinkedIn: <input type='text' name='linkedin'>" \
+        "<br><br>*Department: <input type='checkbox' name='cb_dpt1'>Test Department" \
+        "<br><br>Account Type: <select><option name='admin'>Admin</option>" \
+        "<option name='student'>Student</option><option name='professor'>Professor</option></select>" \
+        "<br><br><button type='submit'>Submit</button></form></p></center>"
+    
+    elif request.method == "POST":
+        return "POST ON SIGNUP"
+
+@app.route("/dashboard")    
+def dashboard():
+    if 'username' in session:
+        return "<title>Dashboard</title><center><h1>Home</h1></center>"
+    else:
+        return redirect(url_for('home'))
 
 if __name__=="__main__":
     app.run(debug=True)
