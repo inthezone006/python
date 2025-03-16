@@ -99,18 +99,23 @@ def main():
 
 @app.route("/home")
 def home():
-    return "<title>Home</title>" \
-    "<center><h1>Research Buddy</h1>" \
-    "<p>Please <a href='/signin'>sign in</a> to continue or " \
-    "<a href='/signup'>create an account</a>.</p></center>"
+    if 'id' in session:
+        return redirect(url_for('dashboard'))
+    
+    else:
+        return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+        <title>Research Buddy</title><main><h1>Home</h1><button onclick=\"window.location.href='/signin';\"> \
+        Sign In</button> <button onclick=\"window.location.href='/signup';\">Create Account</button> \
+        </main><footer>Research Buddy v1.0a</footer>"
     
 @app.route("/signin", methods=['GET', 'POST'])    
 def signin():
     if request.method == 'GET':
-        return "<title>Sign In</title><button onclick=\"window.location.href='/home';\"><<</button>" \
-        "<center><h1>Sign In</h1><p><form method='POST'>Username: <input type='text' name='username'>" \
-        "<br><br>Password: <input type='password' name='password' required>" \
-        "<br><br><button type='submit'>Submit</button></form></p></center>"
+        return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Sign In</title> \
+        <main><h1>Sign In</h1><p><form method='POST'> Username: <input type='text' name='username'><br><br>" \
+        "Password: <input type='password' name='password' required><br><br>" \
+        "<button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
+        "<button type='submit'>Sign In</button></form></p></main><footer>Research Buddy v1.0a</footer>"
     
     elif request.method == 'POST':
         username = request.form.get('username', '')
@@ -131,7 +136,8 @@ def signin():
         session['email'] = response[5]
         session['resume'] = response[6]
         session['linkedin'] = response[7]
-        session['status'] = response[8]
+        session['department_id'] = response[8]
+        session['status'] = response[9]
 
         return redirect(url_for('dashboard'))
     
@@ -139,8 +145,8 @@ def signin():
 @app.route("/signup", methods=['GET', 'POST'])    
 def signup():
     if request.method == "GET":
-        return "<title>Sign Up</title><button onclick=\"window.location.href='/home';\"><<</button>" \
-        "<center><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
+        return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Sign Up</title>" \
+        "<main><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
         "<p><form method='POST'>*Username: <input type='text' name='username'>" \
         "<br><br>*Password: <input type='password' name='password' required>" \
         "<br><br>*Confirm password: <input type='password' name='password2' required>" \
@@ -152,7 +158,8 @@ def signup():
         "<br><br>*Department: <input type='checkbox' name='cb_dpt1'>Test Department" \
         "<br><br>Account Type: <select><option name='admin'>Admin</option>" \
         "<option name='student'>Student</option><option name='professor'>Professor</option></select>" \
-        "<br><br><button type='submit'>Submit</button></form></p></center>"
+        "<br><br><button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
+        "<button type='submit'>Sign Up</button></form></p></main><footer>Research Buddy v1.0a</footer>"
     
     elif request.method == "POST":
         return "POST ON SIGNUP"
@@ -160,24 +167,104 @@ def signup():
 @app.route("/dashboard")    
 def dashboard():
     if 'id' in session:
-        extra_button = ""
+        status_buttons = ""
         if session['status'] == 'admin':
-            extra_button = "<button onclick=\"window.location.href='/admin';\">Admin Dashboard</button>"
-        return f"<title>Dashboard</title><center><h1>Home</h1> \
-        <p>Welcome, {session['first']} {session['last']}!</p> \
-        <button onclick=\"window.location.href='/edit';\">Edit Account</button> \
-        <button onclick=\"window.location.href='/logout';\">Sign Out</button></center>"
+            status_buttons = "<div class='flex-container'><div class='flex-item'><fieldset class='fieldset-style'>" \
+            "<legend>View:</legend><button class='btn-view' onclick=\"window.location.href='/accounts';\">" \
+            "Accounts</button><br><br><button class='btn-view' onclick=\"window.location.href='/departments';\">" \
+            "Departments</button><br><br><button class='btn-view' onclick=\"window.location.href='/projects';\">" \
+            "Projects</button><br><br><button class='btn-view' onclick=\"window.location.href='/requirements';\">" \
+            "Requirements</button><br><br><button class='btn-view' onclick=\"window.location.href='/status-codes';\">" \
+            "Status Codes</button><br><br></fieldset></div><div class='flex-item'><fieldset class='fieldset-style'>" \
+            "<legend>Edit:</legend><button class='btn-edit' onclick=\"window.location.href='/edit/accounts';\">" \
+            "Accounts</button><br><br><button class='btn-edit' onclick=\"window.location.href='/edit/departments';\">" \
+            "Departments</button><br><br><button class='btn-edit' onclick=\"window.location.href='/edit/projects';\">" \
+            "Projects</button><br><br><button class='btn-edit' onclick=\"window.location.href='/edit/requirements';\">" \
+            "Requirements</button><br><br>" \
+            "<button class='btn-edit' onclick=\"window.location.href='/edit/status-codes';\">Status Codes</button>" \
+            "<br><br></fieldset></div><div class='flex-item'><fieldset class='fieldset-style'><legend>Account:" \
+            "</legend><button class='btn-account' onclick=\"window.location.href='/edit';\">Account Settings</button>" \
+            "<br><br><button class='back-button' onclick=\"window.location.href='/logout';\">Sign Out</button>" \
+            "</fieldset></div></div><br><br>"
+
+        elif session['status'] == 'professor':
+            status_buttons = "<div class='flex-container'><div class='flex-item'>" \
+            "<fieldset class='fieldset-style custom-fieldset'><legend>View:</legend>" \
+            "<button class='btn-view' onclick=\"window.location.href='/projects';\">Projects</button><br><br> " \
+            "<button class='btn-view' onclick=\"window.location.href='/profile';\">Profile</button> " \
+            "</fieldset></div><div class='flex-item'><fieldset class='fieldset-style custom-fieldset'>" \
+            "<legend>Edit:</legend><button class='btn-edit' onclick=\"window.location.href='/edit/projects';\">" \
+            "Projects</button></fieldset></div><div class='flex-item'>" \
+            "<fieldset class='fieldset-style custom-fieldset'><legend>Account:</legend>" \
+            "<button class='btn-account' onclick=\"window.location.href='/edit';\">Account Settings</button><br>" \
+            "<br><button class='back-button' onclick=\"window.location.href='/logout';\">Sign Out</button>" \
+            "</fieldset></div></div><br><br>"
+        
+        elif session['status'] == 'student':
+            status_buttons = "<div class='flex-container'><div class='flex-item'>" \
+            "<fieldset class='fieldset-style custom-fieldset'><legend>View:</legend>" \
+            "<button class='btn-view' onclick=\"window.location.href='/projects';\">Projects</button><br><br> " \
+            "<button class='btn-view' onclick=\"window.location.href='/profile';\">Profile</button> " \
+            "</fieldset></div><div class='flex-item'><fieldset class='fieldset-style custom-fieldset'>" \
+            "<legend>Account:</legend><button class='btn-account' onclick=\"window.location.href='/edit';\">" \
+            "Account Settings</button><br><br>" \
+            "<button class='back-button' onclick=\"window.location.href='/logout';\">Sign Out</button>" \
+            "</fieldset></div></div><br><br>"
+
+        return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Dashboard</title> \
+        <main><h1>Dashboard</h1><p>Welcome, {session['first']} {session['last']}!</p> {status_buttons} </main> \
+        <footer>Account Status: {session['status'].capitalize()}</footer>"
     
     else:
         return redirect(url_for('home'))
-    
-@app.route("/edit", methods=['GET', 'POST'])
-def edit():
+
+@app.route("/view", methods=['GET', 'POST'])
+def view_profile():
     if request.method == "GET":
-        return "GET ON EDIT"
+        return "GET ON VIEW PROFILE"
     
     elif request.method == "POST":
-        return "POST ON EDIT"
+        return "POST ON VIEW PROFILE"
+
+@app.route("/view/status-codes", methods=['GET', 'POST'])
+def view_profile():
+    if request.method == "GET":
+        return "GET ON VIEW STATUS CODES"
+    
+    elif request.method == "POST":
+        return "POST ON VIEW STATUS CODES"
+
+@app.route("/edit", methods=['GET', 'POST'])
+def edit_profile():
+    if request.method == "GET":
+        return "GET ON EDIT PROFILE"
+    
+    elif request.method == "POST":
+        return "POST ON EDIT PROFILE"
+    
+@app.route("/edit/accounts", methods=['GET', 'POST'])
+def edit_accounts():
+    if request.method == "GET":
+        return "GET ON EDIT ACCOUNTS"
+    
+    elif request.method == "POST":
+        return "POST ON EDIT ACCOUNTS"
+    
+@app.route("/edit/departments", methods=['GET', 'POST'])
+def edit_departments():
+    if request.method == "GET":
+        return "GET ON EDIT DEPARTMENTS"
+    
+    elif request.method == "POST":
+        return "POST ON EDIT DEPARTMENTS"    
+
+@app.route("/edit/status-codes", methods=['GET', 'POST'])
+def edit_status_codes():
+    if request.method == "GET":
+        return "GET ON EDIT STATUS CODES"
+    
+    elif request.method == "POST":
+        return "POST ON EDIT STATUS CODES"  
 
 @app.route("/logout")
 def logout():
