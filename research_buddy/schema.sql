@@ -6,13 +6,13 @@ USE research_buddy;
 
 CREATE TABLE `accounts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `first` varchar(255) NOT NULL,
-  `last` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `resume` varchar(255) DEFAULT NULL,
-  `linkedin` varchar(255) DEFAULT NULL,
+  `username` varchar(35) NOT NULL,
+  `password` varchar(35) NOT NULL,
+  `first` varchar(35) NOT NULL,
+  `last` varchar(35) NOT NULL,
+  `email` varchar(35) NOT NULL,
+  `resume` varchar(35) DEFAULT NULL,
+  `linkedin` varchar(35) DEFAULT NULL,
   `department_id` int(11) DEFAULT NULL,
   `status` varchar(9) NOT NULL,
   PRIMARY KEY (`id`),
@@ -31,7 +31,7 @@ CREATE TABLE `admin` (
 
 CREATE TABLE `professors` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `website` varchar(255) DEFAULT NULL,
+  `website` varchar(35) DEFAULT NULL,
   `status` varchar(9) NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `professor_id` FOREIGN KEY (`id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -48,17 +48,17 @@ CREATE TABLE `students` (
 
 CREATE TABLE `departments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
+  `name` varchar(35) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `projects` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `description` varchar(255) NOT NULL,
+  `title` varchar(35) NOT NULL,
+  `description` varchar(35) NOT NULL,
   `department_id` int(11) NOT NULL,
-  `link` varchar(255) NOT NULL,
+  `link` varchar(35) NOT NULL,
   `professor_id` int(11) NOT NULL,
   `status` varchar(9) NOT NULL,
   PRIMARY KEY (`id`),
@@ -98,8 +98,8 @@ CREATE TABLE `projects_departments` (
 
 CREATE TABLE `requirements` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(255) NOT NULL,
-  `description` varchar(255) NOT NULL,
+  `title` varchar(35) NOT NULL,
+  `description` varchar(35) NOT NULL,
   `department_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `requirements_department_id` (`department_id`),

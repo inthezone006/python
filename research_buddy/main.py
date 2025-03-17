@@ -1,13 +1,13 @@
 # Database Design (name: research_buddy)
 # accounts (Holds all accounts) - unique_index[username, password], index[id]
 # (PK, INT) id
-# (NOT NULL, UNIQUE, VARCHAR(255)) username
-# (NOT NULL, VARCHAR(255)) password
-# (NOT NULL, VARCHAR(255)) first
-# (NOT NULL, VARCHAR(255)) last
-# (NOT NULL, VARCHAR(255)) email 
-# (VARCHAR(255)) resume
-# (VARCHAR(255)) linkedin
+# (NOT NULL, UNIQUE, VARCHAR(35)) username
+# (NOT NULL, VARCHAR(35)) password
+# (NOT NULL, VARCHAR(35)) first
+# (NOT NULL, VARCHAR(35)) last
+# (NOT NULL, VARCHAR(35)) email 
+# (VARCHAR(35)) resume
+# (VARCHAR(35)) linkedin
 # (FK departments_id REFERENCES departments.id, INT) department_id
 # (NOT NULL, CONSTRAINT CHK_STATUS CHECK (status='admin' OR status='professor' OR status='student'), VARCHAR(9)) status
 #
@@ -16,7 +16,7 @@
 # 
 # professors (Puts up projects) - index[id]
 # (PK, FK professor_id REFERENCES accounts.id, INT) id
-# (VARCHAR(255)) website
+# (VARCHAR(35)) website
 # (NOT NULL, CONSTRAINT CHK_STATUS CHECK (status='assistant' OR status='associate' OR status='full'), VARCHAR(9)) status
 #
 # students (Signs up for projects) - index[id]
@@ -25,14 +25,14 @@
 # 
 # departments (Holds all departments/majors) - index[id]
 # (PK, INT) id
-# (NOT NULL, UNIQUE, VARCHAR(255)) name
+# (NOT NULL, UNIQUE, VARCHAR(35)) name
 # 
 # projects (Holds all projects) - index[id]
 # (PK, INT) id
-# (NOT NULL, UNIQUE, VARCHAR(255)) title
-# (NOT NULL, VARCHAR(255)) description
+# (NOT NULL, UNIQUE, VARCHAR(35)) title
+# (NOT NULL, VARCHAR(35)) description
 # (NOT NULL, FK projects_department_id REFERENCES departments.id, INT) department_id
-# (NOT NULL, VARCHAR(255)) link
+# (NOT NULL, VARCHAR(35)) link
 # (NOT NULL, FK projects_professor_id REFERENCES professors.id, INT) professor_id
 # (NOT NULL, CONSTRAINT CHK_STATUS CHECK (status='open' OR status='closed' OR status='paused'), VARCHAR(9)) status
 # 
@@ -50,8 +50,8 @@
 # 
 # requirements (For all the possible requirements a student/project can have) - index[id]
 # (PK, INT) id
-# (NOT NULL, VARCHAR(255)) title
-# (NOT NULL, VARCHAR(255)) description
+# (NOT NULL, VARCHAR(35)) title
+# (NOT NULL, VARCHAR(35)) description
 # (FK requirements_department_id REFERENCES departments.id, INT) department_id
 #
 # student_requirements (For all the requirements a student has; implement that all students are at least a student) -
@@ -112,15 +112,17 @@ def home():
 def signin():
     if request.method == 'GET':
         return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Sign In</title> \
-        <main><h1>Sign In</h1><p><form method='POST'> Username: <input type='text' name='username'><br><br>" \
-        "Password: <input type='password' name='password' required><br><br>" \
-        "<button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
-        "<button type='submit'>Sign In</button></form></p></main><footer>Research Buddy v1.0a</footer>"
+        <main><div class='content-container'><h1>Sign In</h1><form method='POST'> Username: \
+        <input type='text' maxlength='35' name='username' required><br><br>Password: \
+        <input type='password' maxlength='35' name='password' required> \
+        <br><br><div class='content-buttons'> \
+        <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+        <button type='submit'>Sign In</button></div></form></div></main><footer>Research Buddy v1.0a</footer>"
     
     elif request.method == 'POST':
         username = request.form.get('username', '')
         password = request.form.get('password', '')
-        query = "SELECT * FROM accounts WHERE username = %s AND password = %s"
+        query = "SELECT * FROM accounts WHERE username = %s AND password = %s ORDER BY id ASC"
         cursor.execute(query, (username, password))
         response = cursor.fetchone()
         
@@ -146,20 +148,21 @@ def signin():
 def signup():
     if request.method == "GET":
         return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Sign Up</title>" \
-        "<main><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
-        "<p><form method='POST'>*Username: <input type='text' name='username'>" \
-        "<br><br>*Password: <input type='password' name='password' required>" \
-        "<br><br>*Confirm password: <input type='password' name='password2' required>" \
-        "<br><br>*First name: <input type='text' name='first' required>" \
-        "<br><br>*Last name: <input type='text' name='last' required>" \
-        "<br><br>*Email: <input type='text' name='email' required>" \
-        "<br><br>Resume: <input type='text' name='resume'>" \
-        "<br><br>LinkedIn: <input type='text' name='linkedin'>" \
+        "<main><div class='content-container'><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
+        "<form method='POST'>*Username: <input type='text' name='username' maxlength='35'>" \
+        "<br><br>*Password: <input type='password' name='password' maxlength='35' required>" \
+        "<br><br>*Confirm password: <input type='password' name='password2' maxlength='35' required>" \
+        "<br><br>*First name: <input type='text' name='first' maxlength='35' required>" \
+        "<br><br>*Last name: <input type='text' name='last' maxlength='35' required>" \
+        "<br><br>*Email: <input type='text' name='email' maxlength='35' required>" \
+        "<br><br>Resume: <input type='text' maxlength='35' name='resume'>" \
+        "<br><br>LinkedIn: <input type='text' maxlength='35' name='linkedin'>" \
         "<br><br>*Department: <input type='checkbox' name='cb_dpt1'>Test Department" \
         "<br><br>Account Type: <select><option name='admin'>Admin</option>" \
         "<option name='student'>Student</option><option name='professor'>Professor</option></select>" \
-        "<br><br><button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
-        "<button type='submit'>Sign Up</button></form></p></main><footer>Research Buddy v1.0a</footer>"
+        "<br><br><div class='content-buttons'>" \
+        "<button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
+        "<button type='submit'>Sign Up</button></div></form></div></main><footer>Research Buddy v1.0a</footer>"
     
     elif request.method == "POST":
         return "POST ON SIGNUP"
@@ -218,21 +221,134 @@ def dashboard():
     else:
         return redirect(url_for('home'))
 
-@app.route("/view", methods=['GET', 'POST'])
+@app.route("/view")
 def view_profile():
-    if request.method == "GET":
-        return "GET ON VIEW PROFILE"
+    if session['status'] == 'student' or session['status'] == 'professor':
+        if session['status'] == 'student':
+            return "GET ON VIEW PROFILE"
+        
+        elif session['status'] == 'professor':
+            return "GET ON VIEW PROFILE"
     
-    elif request.method == "POST":
-        return "POST ON VIEW PROFILE"
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
 
-@app.route("/view/status-codes", methods=['GET', 'POST'])
-def view_profile():
-    if request.method == "GET":
-        return "GET ON VIEW STATUS CODES"
+        else:
+            return redirect(url_for('home'))
+
+@app.route("/accounts")
+def view_accounts():
+    if session['status'] == 'admin':
+        query = "SELECT * FROM accounts ORDER BY id ASC"
+        cursor.execute(query)
+        response = cursor.fetchall()
+
+        html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+        <title>Status Codes</title><body><main><div class='viewer-container'><h1>Accounts</h1>"
+
+        for row in response:
+            html += f"<div class='row-heading'>ID: {row[0]}</div> \
+            <div class='content-field'><span class='viewer-label'>Username:</span><span>{row[1]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Password:</span><span>{row[2]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>First name:</span><span>{row[3]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Last name:</span><span>{row[4]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Email:</span><span>{row[5]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Resume:</span><span>{row[6]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>LinkedIn:</span><span>{row[7]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[8]}</span></div> \
+            <div class='content-field'><span class='viewer-label'>Status: </span><span>{row[9]}</span></div>"
+
+        html += f"<div class='content-buttons'> \
+        <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+        </div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+
+        return html
+    
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
+        
+@app.route("/departments")
+def view_departments():
+    if session['status'] == 'admin':
+        query = "SELECT * FROM departments ORDER BY id ASC"
+        cursor.execute(query)
+        response = cursor.fetchall()
+
+        html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+        <title>Departments</title><body><main><div class='viewer-container'><h1>Departments</h1>"
+
+        for row in response:
+            html += f"<div class='row-heading'>ID: {row[0]}</div> \
+            <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[1]}</span></div>"
+
+        html += f"<div class='content-buttons'> \
+        <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+        </div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+
+        return html
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
+
+@app.route("/projects")
+def view_projects():
+    if 'id' in session:
+        return "GET ON VIEW PROJECTS"
     
     elif request.method == "POST":
-        return "POST ON VIEW STATUS CODES"
+        return "POST ON VIEW PROJECTS"
+    
+    else:
+        return redirect(url_for('home'))
+
+@app.route("/requirements")
+def view_requirements():
+    if session['status'] == 'admin':
+        return "GET ON VIEW REQUIREMENTS"
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
+
+@app.route("/status-codes")
+def view_status_codes():
+    if session['status'] == 'admin':
+        query = "SELECT * FROM status_code"
+        cursor.execute(query)
+        response = cursor.fetchone()
+
+        return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+        <title>Status Codes</title><body><main><div class='viewer-container'><h1>Status Codes</h1> \
+        <div class='content-field'><span class='viewer-label'>Admin:</span> \
+        <span>{response[1]}</span></div><div class='content-field'><span class='viewer-label'>Professor:</span> \
+        <span>{response[2]}</span></div><div class='content-field'><span class='viewer-label'>Student:</span> \
+        {response[3]}<span></span><div class='content-buttons'> \
+        <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+        </div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
 
 @app.route("/edit", methods=['GET', 'POST'])
 def edit_profile():
@@ -260,11 +376,12 @@ def edit_departments():
 
 @app.route("/edit/status-codes", methods=['GET', 'POST'])
 def edit_status_codes():
-    if request.method == "GET":
-        return "GET ON EDIT STATUS CODES"
+    if 'id' in session:
+        if request.method == "GET":
+            return "GET ON EDIT STATUS CODES"
     
-    elif request.method == "POST":
-        return "POST ON EDIT STATUS CODES"  
+        elif request.method == "POST":
+            return "POST ON EDIT STATUS CODES"  
 
 @app.route("/logout")
 def logout():
