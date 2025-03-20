@@ -69,7 +69,7 @@ CREATE TABLE `projects` (
   CONSTRAINT `chk_status` CHECK (`status` in ('open','closed','paused'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `projectsrel` (
+CREATE TABLE `projects_students` (
   `student_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   PRIMARY KEY (`student_id`,`project_id`),
@@ -78,35 +78,14 @@ CREATE TABLE `projectsrel` (
   CONSTRAINT `projectsrel_student_id` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `accounts_departments` (
-  `department_id` int(11) NOT NULL,
-  `account_id` int(11) NOT NULL,
-  PRIMARY KEY (`department_id`,`account_id`),
-  KEY `accounts_departments_account_id` (`account_id`),
-  CONSTRAINT `accounts_departments_account_id` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `accounts_departments_department_id` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `projects_departments` (
-  `department_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  PRIMARY KEY (`department_id`,`project_id`),
-  KEY `projects_departments_projects_id` (`project_id`),
-  CONSTRAINT `projects_departments_department_id` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `projects_departments_projects_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 CREATE TABLE `requirements` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(35) NOT NULL,
   `description` varchar(35) NOT NULL,
-  `department_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `requirements_department_id` (`department_id`),
-  CONSTRAINT `requirements_department_id` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `student_requirements` (
+CREATE TABLE `students_requirements` (
   `requirement_id` int(11) NOT NULL,
   `student_id` int(11) NOT NULL,
   PRIMARY KEY (`requirement_id`,`student_id`),
@@ -115,7 +94,7 @@ CREATE TABLE `student_requirements` (
   CONSTRAINT `student_requirements_student_id` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `project_requirements` (
+CREATE TABLE `projects_requirements` (
   `requirement_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
   PRIMARY KEY (`requirement_id`,`project_id`),
@@ -124,7 +103,7 @@ CREATE TABLE `project_requirements` (
   CONSTRAINT `project_requirements_requirement_id` FOREIGN KEY (`requirement_id`) REFERENCES `requirements` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `status_code` (
+CREATE TABLE `status_codes` (
   `id` int(11) NOT NULL,
   `admin` int(11) NOT NULL,
   `professor` int(11) NOT NULL,

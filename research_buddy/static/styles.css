@@ -211,4 +211,8 @@ select {
     font-weight: bold;
     margin: 10px 0;
     color: #333;
+    background-color: #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: inline-block;
 }
