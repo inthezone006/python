@@ -13,7 +13,7 @@ CREATE TABLE `accounts` (
   `email` varchar(35) NOT NULL,
   `resume` varchar(35) DEFAULT NULL,
   `linkedin` varchar(35) DEFAULT NULL,
-  `department_id` int(11) DEFAULT NULL,
+  `department_id` int(11) DEFAULT NOT NULL,
   `status` varchar(9) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
@@ -76,31 +76,6 @@ CREATE TABLE `projects_students` (
   KEY `projectsrel_project_id` (`project_id`),
   CONSTRAINT `projectsrel_project_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `projectsrel_student_id` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `requirements` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `title` varchar(35) NOT NULL,
-  `description` varchar(35) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `students_requirements` (
-  `requirement_id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  PRIMARY KEY (`requirement_id`,`student_id`),
-  KEY `student_requirements_student_id` (`student_id`),
-  CONSTRAINT `student_requirements_requirement_id` FOREIGN KEY (`requirement_id`) REFERENCES `requirements` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `student_requirements_student_id` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-CREATE TABLE `projects_requirements` (
-  `requirement_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  PRIMARY KEY (`requirement_id`,`project_id`),
-  KEY `project_requirements_project_id` (`project_id`),
-  CONSTRAINT `project_requirements_project_id` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `project_requirements_requirement_id` FOREIGN KEY (`requirement_id`) REFERENCES `requirements` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE `status_codes` (

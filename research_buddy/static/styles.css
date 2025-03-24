@@ -37,7 +37,7 @@ footer {
 }
   
 .fieldset-style {
-    min-height: 350px;
+    min-height: 290px;
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 10px;
@@ -215,4 +215,8 @@ select {
     padding: 5px 10px;
     border-radius: 8px;
     display: inline-block;
+}
+
+.hidden { 
+    display: none; 
 }
