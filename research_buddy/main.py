@@ -231,8 +231,7 @@ def dashboard():
             "Projects Report</button><br><br" \
             "><button class='btn-view' onclick=\"window.location.href='/status-codes';\">Status Codes Report</button>" \
             "<br><br></fieldset></div><div class='flex-item'><fieldset class='fieldset-style'>" \
-            "<legend>Edit:</legend><button class='btn-edit' onclick=\"window.location.href='/edit/accounts';\">" \
-            "Accounts</button><br><br><button class='btn-edit' onclick=\"window.location.href='/edit/departments';\">" \
+            "<legend>Edit:</legend><button class='btn-edit' onclick=\"window.location.href='/edit/departments';\">" \
             "Departments</button><br><br><button class='btn-edit' onclick=\"window.location.href='/edit/projects';\">" \
             "Projects</button><br><br>" \
             "<button class='btn-edit' onclick=\"window.location.href='/edit/status-codes';\">Status Codes</button>" \
@@ -567,11 +566,48 @@ def view_projects():
                 return response
             
         elif session['status'] == 'student':
+            query = f"SELECT p.id, p.title, p.description, p.link, p.status, d.name AS department_name, \
+            a.first AS professor_first, a.last AS professor_last FROM projects p JOIN projects_students \
+            ps ON p.id = ps.project_id JOIN departments d ON p.department_id = d.id JOIN accounts a ON \
+            p.professor_id = a.id WHERE ps.student_id = %s"
+
+            cursor.execute(query, (session['id'], ))
+            response = cursor.fetchall()
+
             if request.method == "GET":
-                return "GET ON PROJECTS - STUDENT"
+                html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
+
+                for row in response:
+                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                    <div class='content-field'><span class='viewer-label'>Title:</span><span>{row[1]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Description:</span><span>{row[2]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[5]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Link:</span><span>{row[3]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Professor:</span><span>{row[6]} {row[7]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[4].capitalize()}</span></div>"
+
+                html += f"<div class='content-buttons'><form method='POST'><button type='submit'> \
+                Export to CSV</button><br> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back \
+                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+
+                return html
 
             elif request.method == "POST":
-                return "POST ON PROJECTS - STUDENT"
+                si = io.StringIO()
+                cw = csv.writer(si)
+
+                cw.writerow(['id', 'title', 'description', 'link', 'status', 'department', 'professor_first', 'professor_last'])
+
+                for row in response:
+                    cw.writerow(row)
+
+                output = si.getvalue()
+
+                response = Response(output, mimetype="text/csv")
+                response.headers["Content-Disposition"] = "attachment; filename=projects.csv"
+                return response
         
     else:
         return redirect(url_for('home'))
@@ -628,7 +664,7 @@ def edit_profile():
         <select name='ssetting' id='ssetting'><option value='username'>Username</option><option value='password'> \
         Password</option><option value='first'>First Name</option><option value='last'>Last Name</option> \
         <option value='email'>Email</option><option value='resume'>Resume</option><option value='linkedin'> \
-        LinkedIn</option><option value='department'>Department</option>"
+        LinkedIn</option><option value='department'>Department ID</option>"
         
         if session['status'] == 'professor':
             html += "<option value='professor_website'>Professor Website</option> \
@@ -682,31 +718,174 @@ def edit_profile():
 
         return "<script>alert('Successfully updated!'); window.location.href='/edit';</script>"
     
-@app.route("/edit/accounts", methods=['GET', 'POST'])
-def edit_accounts():
-    if session['status'] == 'admin':
-        if request.method == "GET":
-            return "GET ON EDIT ACCOUNTS"
-    
-        elif request.method == "POST":
-            return "POST ON EDIT ACCOUNTS"  
-    
 @app.route("/edit/departments", methods=['GET', 'POST'])
 def edit_departments():
-    if request.method == "GET":
-        return "GET ON EDIT DEPARTMENTS"
-    
-    elif request.method == "POST":
-        return "POST ON EDIT DEPARTMENTS"    
+    if session['status'] == 'admin':
+        cursor.execute("CALL GetAllDepartments()")
+        response = cursor.fetchall()
+
+        while cursor.nextset():
+            pass
+
+        if request.method == "GET":
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            <title>Edit Departments</title><body><main><div class='content-container'><h1>Edit Departments</h1> \
+            <form method='POST' onsubmit='return handlePrompt();'><label for='sname'>Department to Change:</label> \
+            <select name='sname' id='sname'>"
+
+            for row in response:
+                html += f"<option value='{row[1]}'>{row[1]}</option>"
+            
+            html += f"<input type='hidden' name='newName' id='newName' value=''><br><br></select> \
+            <div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='button' class='btn-account' onclick=\"window.location.href='/new/departments';\"> \
+            Add New Department</button><button type='submit'>Change Department</button></div></form></main><footer> \
+            Account Status: {session['status'].capitalize()}</footer><script> \
+            function handlePrompt() {{ var new_name = prompt('Enter new department name (max. 35 characters): '); \
+            if (new_name !== null && new_name.trim() !== '') {{ document.getElementById('newName').value = new_name; \
+            return true; }} return false; }};</script></body>"
+
+            return html
+        
+        elif request.method == "POST":
+            old_name = request.form.get('sname')
+            new_name = request.form.get('newName')
+            if not new_name or len(new_name) > 35:
+                return "<script>alert('Status code must be between 0-35 characters.'); " \
+                "window.location.href='/edit/status-codes';</script>"
+            query = f"UPDATE departments SET name = %s WHERE name = %s;"
+            cursor.execute(query, (new_name, old_name))
+            cnx.commit()
+            return "<script>alert('Successfully updated!'); window.location.href='/edit/departments';</script>"
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home')) 
     
 @app.route("/edit/projects", methods=['GET', 'POST'])
 def edit_projects():
     if session['status'] == 'admin':
+        query = "SELECT title FROM projects"
+        cursor.execute(query)
+        response = cursor.fetchall()
+
         if request.method == "GET":
-            return "GET ON EDIT PROJECTS"
-    
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            <title>Edit Projects</title><body><main><div class='content-container'><h1>Edit Projects</h1> \
+            <form method='POST' onsubmit='return handlePrompt();'><label for='sname'>Project to Change:</label> \
+            <select name='sname' id='sname'>"            
+            
+            for row in response:
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
+            
+            html += f"<input type='hidden' name='newValue' id='newValue' value=''><br><br></select> \
+            <label for='sdetail'>Project Detail</label><select name='sdetail' id='sdetail'><option value='title'> \
+            Title</option><option value='description'>Description</option><option value='link'>Link</option> \
+            <option value='status'>Status</option></select><div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='button' class='btn-account' onclick=\"window.location.href='/new/projects';\"> \
+            Add New Project</button><button type='submit'>Change Project</button></div></form></main><footer> \
+            Account Status: {session['status'].capitalize()}</footer><script> \
+            function handlePrompt() {{ var new_value = prompt('Enter new value (max. 35 characters): '); \
+            if (new_value !== null && new_value.trim() !== '') {{ document.getElementById('newValue').value=new_value; \
+            return true; }} return false; }};</script></body>"
+
+            return html
+        
         elif request.method == "POST":
-            return "POST ON EDIT PROJECTS"  
+            sdetail = request.form.get('sdetail')
+            new_value = request.form.get('newValue')
+            old_name = request.form.get('sname')
+
+            if not new_value or len(new_value) > 35:
+                return "<script>alert('Setting must be between 0-35 characters.'); " \
+                "window.location.href='/edit/projects';</script>"
+            
+            query = f"UPDATE projects SET {sdetail} = %s WHERE name = %s;"
+            cursor.execute(query, (new_value, old_name))
+            cnx.commit()
+            return "<script>alert('Successfully updated!'); window.location.href='/edit/projects';</script>"
+        
+    elif session['status'] == 'professor':
+        if request.method == "GET":
+            query = "SELECT title FROM projects WHERE professor_id = %s"
+            cursor.execute(query, (session['id'], ))
+            response = cursor.fetchall()
+
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            <title>Edit Projects</title><body><main><div class='content-container'><h1>Edit Projects</h1> \
+            <form method='POST' onsubmit='return handlePrompt();'><label for='sname'>Project to Change:</label> \
+            <select name='sname' id='sname'>"            
+            
+            for row in response:
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
+            
+            html += f"<input type='hidden' name='newValue' id='newValue' value=''><br><br></select> \
+            <label for='sdetail'>Project Detail</label><select name='sdetail' id='sdetail'><option value='title'> \
+            Title</option><option value='description'>Description</option><option value='link'>Link</option> \
+            <option value='status'>Status</option></select><div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='submit'>Change Project</button></div></form></main><footer> \
+            Account Status: {session['status'].capitalize()}</footer><script> \
+            function handlePrompt() {{ var new_value = prompt('Enter new value (max. 35 characters): '); \
+            if (new_value !== null && new_value.trim() !== '') {{ document.getElementById('newValue').value=new_value; \
+            return true; }} return false; }};</script></body>"
+
+            return html
+        
+        elif request.method == "POST":
+            sdetail = request.form.get('sdetail')
+            new_value = request.form.get('newValue')
+            old_name = request.form.get('sname')
+
+            if not new_value or len(new_value) > 35:
+                return "<script>alert('Setting must be between 0-35 characters.'); " \
+                "window.location.href='/edit/projects';</script>"
+            
+            query = f"UPDATE projects SET {sdetail} = %s WHERE name = %s;"
+            cursor.execute(query, (new_value, old_name))
+            cnx.commit()
+            return "<script>alert('Successfully updated!'); window.location.href='/edit/projects';</script>"
+
+    else:
+        query = "SELECT p.title FROM projects p JOIN projects_students ps ON p.id = ps.project_id " \
+        "WHERE ps.student_id = %s;"
+        cursor.execute(query, (session['id'], ))
+        response = cursor.fetchall()
+
+        if request.method == "GET":
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            <title>Edit Projects</title><body><main><div class='content-container'><h1>Edit Projects</h1> \
+            <form method='POST' onsubmit='return handlePrompt();'><label for='sname'>Project to Change:</label> \
+            <select name='sname' id='sname'>"
+
+            for row in response:
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
+            
+            html += f"<br><br></select> \
+            <div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='submit'>Leave Project</button></div></form></main><footer> \
+            Account Status: {session['status'].capitalize()}</footer></body>"
+
+            return html
+        
+        elif request.method == "POST":
+            pname = request.form.get('sname')
+            query = f"SELECT id FROM projects WHERE title = %s;"
+            cursor.execute(query, (pname, ))
+            response = cursor.fetchone()
+            response = response[0]
+
+            query = f"DELETE FROM projects_students WHERE student_id = %s AND project_id = %s;"
+            cursor.execute(query, (session['id'], response))
+            cnx.commit()
+            return "<script>alert('Successfully left!'); window.location.href='/edit/projects';</script>"
 
 @app.route("/edit/status-codes", methods=['GET', 'POST'])
 def edit_status_codes():
@@ -746,7 +925,7 @@ def edit_status_codes():
         
 @app.route("/new/projects", methods=['GET', 'POST'])
 def new_projects():
-    if session['status'] == 'professor':
+    if session['status'] != 'student':
         if request.method == "GET":
             query = "SELECT name FROM departments ORDER BY id ASC"
             cursor.execute(query)
@@ -768,7 +947,8 @@ def new_projects():
             "<option value='closed'>Closed</option><option value='paused'>Paused</option></select>" \
             "<div class='content-buttons'>" \
             "<button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> " \
-            "<button type='submit'>Sign Up</button></div></form></div></main><footer>Research Buddy v1.0a</footer>"
+            "<button type='submit'>Create Project</button></div></form></div></main><footer>Research Buddy v1.0a" \
+            "</footer>"
 
             return html
         
@@ -789,6 +969,74 @@ def new_projects():
             cnx.commit()
 
             return "<script>window.alert('Project created successfully!');window.location.href = '/dashboard';</script>"
+        
+    else:
+        query = "SELECT p.title FROM projects p WHERE p.department_id = %s AND p.id NOT IN (SELECT project_id " \
+        "FROM projects_students WHERE student_id = %s);"
+
+        cursor.execute(query, (session['department_id'], session['id']))
+        response = cursor.fetchall()
+
+        if request.method == "GET":
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            <title>New Project</title><body><main><div class='content-container'><h1>New Project</h1> \
+            <form method='POST' onsubmit='return handlePrompt();'><label for='sname'>Project to Join:</label> \
+            <select name='sname' id='sname'>"
+
+            for row in response:
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
+            
+            html += f"<br><br></select> \
+            <div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='submit'>Join Project</button></div></form></main><footer> \
+            Account Status: {session['status'].capitalize()}</footer></body>"
+
+            return html
+        
+        elif request.method == "POST":
+            pname = request.form.get('sname')
+            query = f"SELECT id FROM projects WHERE title = %s;"
+            cursor.execute(query, (pname, ))
+            response = cursor.fetchone()
+            response = response[0]
+
+            query = f"INSERT INTO projects_students (student_id, project_id) VALUES (%s, %s);"
+            cursor.execute(query, (session['id'], response))
+            cnx.commit()
+            return "<script>alert('Successfully joined!'); window.location.href='/dashboard';</script>"
+
+@app.route("/new/departments", methods=['GET', 'POST'])
+def new_departments():
+    if session['status'] == 'admin':
+        if request.method == "GET":
+
+            return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>New Department \
+            </title><main><div class='content-container'><h1>New Department</h1><p> \
+            Fields marked with an asterisk (*) are required.</p><p>All fields have a character limit of 35.</p> \
+            <form method='POST'>*Name: <input type='text' name='name' maxlength='35'><br><br> \
+            <div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+            <button type='submit'>Sign Up</button></div></form></div></main><footer>Research Buddy v1.0a</footer>"
+        
+        elif request.method == "POST":
+            title = request.form.get('name')
+            
+            insert_department = "INSERT INTO departments (name) VALUES (%s)" \
+
+            cursor.execute(insert_department, (title, ))
+            cnx.commit()
+
+            return "<script>window.alert('Department created successfully!');window.location.href = '/dashboard'; \
+                </script>"
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
 
 @app.route("/logout")
 def logout():
