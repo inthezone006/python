@@ -80,11 +80,7 @@ CREATE TABLE `projects_students` (
 
 CREATE TABLE `status_codes` (
   `id` int(11) NOT NULL,
-  `admin` int(11) NOT NULL,
-  `professor` int(11) NOT NULL,
-  `student` int(11) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `admin` (`admin`),
-  UNIQUE KEY `professor` (`professor`),
-  UNIQUE KEY `student` (`student`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  `account` varchar(35) NOT NULL,
+  `code` int(4) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci

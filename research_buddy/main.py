@@ -42,9 +42,8 @@
 # 
 # status_codes - index[id]
 # (PK, INT) id
-# (NOT NULL, INT) admin
-# (NOT NULL, INT) professor
-# (NOT NULL, INT) student
+# (NOT NULL, VARCHAR(35)) account
+# (NOT NULL, INT) code
 #
 #
 # TODO: User interface must populate data from the database dynamically (e.g., cannot just hardcode the data) 
@@ -279,80 +278,80 @@ def dashboard():
 @app.route("/profile", methods=['GET', 'POST'])
 def view_profile():
     if session['status'] == 'student' or session['status'] == 'professor':
-
         if request.method == "GET":
-            cursor.execute("CALL GetAccountDetails(%s)", (session['id'], ))
-            response = cursor.fetchall()
-            while cursor.nextset():
-                pass
-            response = response[0]
-
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
             <title>Profile Report</title><body><main><div class='viewer-container'><h1>Profile Report</h1> \
-            <div class='content-field'><span class='viewer-label'>Username:</span> \
-            <span>{response[1]}</span></div><div class='content-field'><span class='viewer-label'>Password:</span> \
-            <span>{response[2]}</span></div><div class='content-field'><span class='viewer-label'>First Name:</span> \
-            <span>{response[3]}</span></div><div class='content-field'><span class='viewer-label'>Last Name:</span> \
-            <span>{response[4]}</span></div><div class='content-field'><span class='viewer-label'>Email:</span> \
-            <span>{response[5]}</span></div><div class='content-field'><span class='viewer-label'>Resume:</span> \
-            <span>{response[6]}</span></div><div class='content-field'><span class='viewer-label'>LinkedIn:</span> \
-            <span>{response[7]}</span></div><div class='content-field'><span class='viewer-label'>Department:</span> \
-            <span>{response[8]}</span></div><div class='content-field'><span class='viewer-label'>Status:</span> \
-            <span>{response[9].capitalize()}</span></div>"
+            <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+            <form method='POST'><select name='scode' id='scode' multiple><option value='a.username'>Username \
+            </option><option value='a.password'>Password</option> \
+            <option value='a.first'>First Name</option><option value='a.last'>Last Name</option> \
+            <option value='a.email'>Email</option><option value='a.resume'>Resume</option> \
+            <option value='a.linkedin'>LinkedIn</option><option value='d.name'>Department</option> \
+            <option value='a.status'>Account Status</option>"
+
+            if session['status'] == 'professor':
+                html += "<option value='p.website'>Website</option><option value='p.status'>Professor Status</option>"
             
-            if session['status'] == 'student':
-                html += f"<div class='content-field'><span class='viewer-label'>Student Status:</span> \
-                <span>{response[12].capitalize()}</span></div>"
+            elif session['status'] == 'student':
+                html += "<option value='s.status'>Student Status</option>"
 
-            elif session['status'] == 'professor':
-                html += f"<div class='content-field'><span class='viewer-label'>Professor Website:</span> \
-                <span>{response[10]}</span></div><div class='content-field'> \
-                <span class='viewer-label'>Professor Status:</span> \
-                <span>{response[11].capitalize()}</span></div>"
-
-            html += f"<div class='content-buttons'><form method='POST'> \
-            <button>Export to CSV</button> \
-            <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button><br> \
-            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            html += f"</select><div class='content-buttons'><form method='POST'> \
+            <br><button type='submit'>Show Selected</button><br> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            </body>"
 
             return html
         
         elif request.method == "POST":
-            si = io.StringIO()
-            cw = csv.writer(si)
+            selected_accounts = request.form.getlist('scode')
+            
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+            <title>Profile Report</title><body><main><div class='viewer-container'><h1>Profile Report</h1>"
+            
+            if selected_accounts:
+                col_map = {
+                    "a.username": "Username",
+                    "a.password": "Password",
+                    "a.first": "First Name",
+                    "a.last": "Last Name",
+                    "a.email": "Email",
+                    "a.resume": "Resume",
+                    "a.linkedin": "LinkedIn",
+                    "d.name": "Department",
+                    "a.status": "Account Status",
+                    "p.website": "Website",
+                    "p.status": "Professor Status",
+                    "s.status": "Student Status"
+                }
 
-            if session['status'] == 'student':
-                query = "SELECT a.id, a.username, a.password, a.first, a.last, a.email, a.resume, " \
-                "a.linkedin, d.name AS department_name, a.status, s.status AS student_status FROM accounts a " \
-                "LEFT JOIN departments d ON a.department_id = d.id LEFT JOIN students s on a.id = s.id " \
-                "WHERE a.id = %s;"
+                placeholders = ', '.join(selected_accounts)
+                query = f"SELECT a.id, {placeholders} FROM accounts a JOIN departments d ON a.department_id" \
+                "= d.id LEFT JOIN professors p ON a.id = p.id AND a.status = 'professor' LEFT JOIN students s ON" \
+                " a.id = s.id AND a.status = 'student' WHERE a.id = %s"
+
                 cursor.execute(query, (session['id'], ))
-                response = cursor.fetchall()
+                response = cursor.fetchone()
+                print(response)
 
-                cw.writerow(['id', 'username', 'password', 'first', 'last', 'email', 'resume', 
-                         'linkedin', 'department', 'status', 'student_status'])
+                html += f"<div class='row-heading'>ID: {response[0]}</div>"
 
+                for row in selected_accounts:
+                    if col_map[row] == "Account Status" or col_map[row] == "Professor Status" or col_map[row] == "Student Status":
+                        html += f"<div class='content-field'><span class='viewer-label'>{col_map[row]}:</span> \
+                        <span>{response[selected_accounts.index(row) + 1].capitalize()}</span></div>"
+                    else:
+                        html += f"<div class='content-field'><span class='viewer-label'>{col_map[row]}:</span> \
+                        <span>{response[selected_accounts.index(row) + 1]}</span></div>"
 
-            elif session['status'] == 'professor':
-                query = "SELECT a.id, a.username, a.password, a.first, a.last, a.email, a.resume," \
-                " a.linkedin, d.name AS department_name, a.status, p.website AS professor_website, p.status " \
-                "AS professor_status FROM accounts a LEFT JOIN departments d ON a.department_id = d.id " \
-                "LEFT JOIN professors p on a.id = p.id WHERE a.id = %s;"
-                cursor.execute(query, (session['id'], ))
-                response = cursor.fetchall()
-
-                cw.writerow(['id', 'username', 'password', 'first', 'last', 'email', 'resume', 
-                         'linkedin', 'department', 'status', 'professor_website', 'professor_status'])
-
-
-            for row in response:
-                cw.writerow(row)
-
-            output = si.getvalue()
-
-            response = Response(output, mimetype="text/csv")
-            response.headers["Content-Disposition"] = "attachment; filename=profile.csv"
-            return response
+            else:
+                html += "<p>No codes selected.</p>"
+                
+            html += f"<div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/profile';\">Back \
+            </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            
+            return html
     
     else:
         if 'id' in session:
@@ -365,58 +364,72 @@ def view_profile():
 @app.route("/accounts", methods=['GET', 'POST'])
 def view_accounts():
     if session['status'] == 'admin':
-        cursor.execute("CALL GetAllAccountDetails()")
+        query = "SELECT email FROM accounts ORDER BY id ASC"
+        cursor.execute(query)
         response = cursor.fetchall()
-        while cursor.nextset():
-            pass
 
         if request.method == "GET":
-
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
-            <title>Accounts Report</title><body><main><div class='viewer-container'><h1>Accounts Report</h1>"
-
+            <title>Accounts Report</title><body><main><div class='viewer-container'><h1>Accounts Report</h1> \
+            <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+            <form method='POST'><select name='scode' id='scode' multiple>"
+            
             for row in response:
-                html += f"<div class='row-heading'>ID: {row[0]}</div> \
-                <div class='content-field'><span class='viewer-label'>Username:</span><span>{row[1]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Password:</span><span>{row[2]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>First name:</span><span>{row[3]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Last name:</span><span>{row[4]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Email:</span><span>{row[5]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Resume:</span><span>{row[6]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>LinkedIn:</span><span>{row[7]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[8]}</span></div> \
-                <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[9].capitalize()}</span>"
-                if row[9] == 'professor':
-                    html += f"<div class='content-field'><span class='viewer-label'>Professor Website:</span><span>{row[10]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Professor Status:</span><span>{row[11].capitalize()}</span></div>"
-                
-                elif row[9] == 'student':
-                    html += f"<div class='content-field'><span class='viewer-label'>Student Status:</span><span>{row[12].capitalize()}</span></div>"
-                
-                html += "</div>"
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
 
-            html += f"<div class='content-buttons'> \
-            <form method='POST'><button type='submit'>Export to CSV</button><br> \
-            <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
-            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            html += f"</select><div class='content-buttons'><form method='POST'> \
+            <br><button type='submit'>Show Selected</button><br> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            </body>"
 
             return html
         
         elif request.method == "POST":
-            si = io.StringIO()
-            cw = csv.writer(si)
+            selected_accounts = request.form.getlist('scode')
+            
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+            <title>Accounts Report</title><body><main><div class='viewer-container'><h1>Accounts Report</h1>"
+            
+            if selected_accounts:
+                placeholders = ','.join(['%s'] * len(selected_accounts))
+                query = f"SELECT * FROM accounts a LEFT JOIN departments d ON a.department_id = d.id \
+                LEFT JOIN professors p ON a.id = p.id LEFT JOIN students s ON a.id = s.id \
+                WHERE email IN ({placeholders})"
+                cursor.execute(query, tuple(selected_accounts))
+                response = cursor.fetchall()
 
-            cw.writerow(['id', 'username', 'password', 'first', 'last', 'email', 'resume', 
-                         'linkedin', 'department', 'status', 'professor_website', 'professor_status', 'student_status'])
+                for row in response:
+                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                    <div class='content-field'><span class='viewer-label'>Username:</span> \
+                    <span>{row[1]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Password:</span><span>{row[2]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>First:</span><span>{row[3]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Last:</span><span>{row[4]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Email:</span><span>{row[5]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Resume:</span><span>{row[6]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>LinkedIn:</span><span>{row[7]}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[9].capitalize()} \
+                    </span></div><div class='content-field'><span class='viewer-label'>Department:</span> \
+                    <span>{row[11]}</span></div>"
 
-            for row in response:
-                cw.writerow(row)
+                    if row[9] == 'professor':
+                        html += f"<div class='content-field'><span class='viewer-label'>Website:</span> \
+                        <span>{row[13]}</span></div><div class='content-field'><span class='viewer-label'> \
+                        Professor Status:</span><span>{row[14].capitalize()}</span></div>"
+                    
+                    elif row[9] == 'student':
+                        html += f"<div class='content-field'><span class='viewer-label'>Student Status:</span> \
+                        <span>{row[16].capitalize()}</span></div>"
 
-            output = si.getvalue()
-
-            response = Response(output, mimetype="text/csv")
-            response.headers["Content-Disposition"] = "attachment; filename=accounts.csv"
-            return response
+            else:
+                html += "<p>No codes selected.</p>"
+                
+            html += f"<div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/accounts';\">Back \
+            </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            
+            return html
             
     else:
         if 'id' in session:
@@ -429,38 +442,53 @@ def view_accounts():
 @app.route("/departments", methods=['GET', 'POST'])
 def view_departments():
     if session['status'] == 'admin':
-        cursor.execute("CALL GetAllDepartments()")
+        query = "SELECT * FROM departments ORDER BY id ASC"
+        cursor.execute(query)
         response = cursor.fetchall()
-        while cursor.nextset():
-            pass
+
         if request.method == "GET":
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
-            <title>Departments Report</title><body><main><div class='viewer-container'><h1>Departments Report</h1>"
-
+            <title>Departments Report</title><body><main><div class='viewer-container'><h1>Departments Report</h1> \
+            <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+            <form method='POST'><select name='scode' id='scode' multiple>"
+            
             for row in response:
-                html += f"<div class='row-heading'>ID: {row[0]}</div> \
-                <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[1]}</span></div>"
+                html += f"<option value='{row[1]}'>{row[1]}</option>"
 
-            html += f"<div class='content-buttons'><form method='POST'><button type='submit'>Export to CSV</button> \
-            <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
-            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            html += f"</select><div class='content-buttons'><form method='POST'> \
+            <br><button type='submit'>Show Selected</button><br> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/dashboard';\"> \
+            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            </body>"
 
             return html
         
         elif request.method == "POST":
-            si = io.StringIO()
-            cw = csv.writer(si)
+            selected_accounts = request.form.getlist('scode')
+            
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+            <title>Departments Report</title><body><main><div class='viewer-container'><h1>Departments Report</h1>"
+            
+            if selected_accounts:
+                placeholders = ','.join(['%s'] * len(selected_accounts))
+                query = f"SELECT * FROM departments WHERE name IN ({placeholders}) ORDER BY id ASC"
+                cursor.execute(query, tuple(selected_accounts))
+                response = cursor.fetchall()
 
-            cw.writerow(['id', 'name'])
+                for row in response:
+                    print(row)
+                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                    <div class='content-field'><span class='viewer-label'>Name:</span> \
+                    <span>{row[1]}</span></div>"
 
-            for row in response:
-                cw.writerow(row)
-
-            output = si.getvalue()
-
-            response = Response(output, mimetype="text/csv")
-            response.headers["Content-Disposition"] = "attachment; filename=departments.csv"
-            return response
+            else:
+                html += "<p>No codes selected.</p>"
+                
+            html += f"<div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/departments';\">Back \
+            </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            
+            return html
     
     else:
         if 'id' in session:
@@ -474,50 +502,65 @@ def view_departments():
 def view_projects():
     if 'id' in session:
         if session['status'] == 'admin':
-            query = "SELECT p.id, p.title, p.description, d.name, p.link, a.first, a.last, p.status FROM projects " \
-                "p LEFT JOIN departments d ON p.department_id = d.id LEFT JOIN accounts a " \
-                "ON p.professor_id = a.id ORDER BY p.id ASC"
-            
+            query = "SELECT * FROM projects"
             cursor.execute(query)
             response = cursor.fetchall()
 
             if request.method == "GET":
                 html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
-                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
-
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1> \
+                <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+                <form method='POST'><select name='scode' id='scode' multiple>"
+                
                 for row in response:
-                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
-                    <div class='content-field'><span class='viewer-label'>Title:</span><span>{row[1]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Description:</span><span>{row[2]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[3]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Link:</span><span>{row[4]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Professor:</span><span>{row[5]} {row[6]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[7].capitalize()}</span></div>"
+                    html += f"<option value='{row[1]}'>{row[1]}</option>"
 
-                html += f"<div class='content-buttons'><form method='POST'><button type='submit'> \
-                Export to CSV</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back \
-                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                html += f"</select><div class='content-buttons'><form method='POST'> \
+                <br><button type='submit'>Show Selected</button><br> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                </footer></body>"
 
                 return html
-            
+                
             elif request.method == "POST":
-                si = io.StringIO()
-                cw = csv.writer(si)
+                selected_accounts = request.form.getlist('scode')
+                
+                html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
+                
+                if selected_accounts:
+                    placeholders = ','.join(['%s'] * len(selected_accounts))
+                    query = f"SELECT p.*, a.first, a.last, d.name FROM projects p \
+                    JOIN departments d ON p.department_id = d.id JOIN accounts a ON \
+                    p.professor_id = a.id WHERE title IN ({placeholders})"
 
-                cw.writerow(['id', 'title', 'description', 'department', 'link', 'professor', 'status'])
+                    cursor.execute(query, tuple(selected_accounts))
+                    response = cursor.fetchall()
 
-                for row in response:
-                    row_list = list(row)
-                    row_list[5] = f"{row_list[5]} {row_list[6]}"
-                    del row_list[6]
-                    cw.writerow(row_list)
+                    for row in response:
+                        print(row)
+                        html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                        <div class='content-field'><span class='viewer-label'>Title:</span> \
+                        <span>{row[1]}</span></div><div class='content-field'><span class='viewer-label'> \
+                        Description:</span><span>{row[2]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Link:</span><span>{row[4]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Status:</span><span>{row[6].capitalize()}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Department:</span><span>{row[9]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Professor:</span><span>{row[7]} {row[8]}</span></div>"
 
-                output = si.getvalue()
-
-                response = Response(output, mimetype="text/csv")
-                response.headers["Content-Disposition"] = "attachment; filename=projects.csv"
-                return response
+                else:
+                    html += "<p>No codes selected.</p>"
+                    
+                html += f"<div class='content-buttons'> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/projects';\">Back \
+                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                
+                return html
     
         elif session['status'] == 'professor':
             query = "SELECT p.id, p.title, p.description, d.name, p.link, a.first, a.last, p.status FROM projects " \
@@ -529,45 +572,62 @@ def view_projects():
 
             if request.method == "GET":
                 html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
-                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
-
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1> \
+                <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+                <form method='POST'><select name='scode' id='scode' multiple>"
+                
                 for row in response:
-                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
-                    <div class='content-field'><span class='viewer-label'>Title:</span><span>{row[1]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Description:</span><span>{row[2]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[3]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Link:</span><span>{row[4]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Professor:</span><span>{row[5]} {row[6]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[7].capitalize()}</span></div>"
+                    html += f"<option value='{row[1]}'>{row[1]}</option>"
 
-                html += f"<div class='content-buttons'><form method='POST'><button type='submit'> \
-                Export to CSV</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back \
-                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                html += f"</select><div class='content-buttons'><form method='POST'> \
+                <br><button type='submit'>Show Selected</button><br> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                </footer></body>"
 
                 return html
             
             elif request.method == "POST":
-                si = io.StringIO()
-                cw = csv.writer(si)
+                selected_accounts = request.form.getlist('scode')
+                
+                html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
+                
+                if selected_accounts:
+                    placeholders = ','.join(['%s'] * len(selected_accounts))
+                    query = f"SELECT p.*, a.first, a.last, d.name FROM projects p \
+                    JOIN departments d ON p.department_id = d.id JOIN accounts a ON \
+                    p.professor_id = a.id WHERE title IN ({placeholders})"
 
-                cw.writerow(['id', 'title', 'description', 'department', 'link', 'professor', 'status'])
+                    cursor.execute(query, tuple(selected_accounts))
+                    response = cursor.fetchall()
 
-                for row in response:
-                    row_list = list(row)
-                    row_list[5] = f"{row_list[5]} {row_list[6]}"
-                    del row_list[6]
-                    cw.writerow(row_list)
+                    for row in response:
+                        print(row)
+                        html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                        <div class='content-field'><span class='viewer-label'>Title:</span> \
+                        <span>{row[1]}</span></div><div class='content-field'><span class='viewer-label'> \
+                        Description:</span><span>{row[2]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Link:</span><span>{row[4]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Status:</span><span>{row[6].capitalize()}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Department:</span><span>{row[9]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Professor:</span><span>{row[7]} {row[8]}</span></div>"
 
-                output = si.getvalue()
-
-                response = Response(output, mimetype="text/csv")
-                response.headers["Content-Disposition"] = "attachment; filename=projects.csv"
-                return response
-            
+                else:
+                    html += "<p>No codes selected.</p>"
+                    
+                html += f"<div class='content-buttons'> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/projects';\">Back \
+                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                
+                return html
+                
         elif session['status'] == 'student':
-            query = f"SELECT p.id, p.title, p.description, p.link, p.status, d.name AS department_name, \
-            a.first AS professor_first, a.last AS professor_last FROM projects p JOIN projects_students \
+            query = f"SELECT p.title FROM projects p JOIN projects_students \
             ps ON p.id = ps.project_id JOIN departments d ON p.department_id = d.id JOIN accounts a ON \
             p.professor_id = a.id WHERE ps.student_id = %s"
 
@@ -576,38 +636,60 @@ def view_projects():
 
             if request.method == "GET":
                 html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
-                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
-
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1> \
+                <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+                <form method='POST'><select name='scode' id='scode' multiple>"
+                
                 for row in response:
-                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
-                    <div class='content-field'><span class='viewer-label'>Title:</span><span>{row[1]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Description:</span><span>{row[2]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Department:</span><span>{row[5]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Link:</span><span>{row[3]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Professor:</span><span>{row[6]} {row[7]}</span></div> \
-                    <div class='content-field'><span class='viewer-label'>Status:</span><span>{row[4].capitalize()}</span></div>"
+                    html += f"<option value='{row[0]}'>{row[0]}</option>"
 
-                html += f"<div class='content-buttons'><form method='POST'><button type='submit'> \
-                Export to CSV</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back \
-                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                html += f"</select><div class='content-buttons'><form method='POST'> \
+                <br><button type='submit'>Show Selected</button><br> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                </footer></body>"
 
                 return html
 
             elif request.method == "POST":
-                si = io.StringIO()
-                cw = csv.writer(si)
+                selected_accounts = request.form.getlist('scode')
+                
+                html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+                <title>Projects Report</title><body><main><div class='viewer-container'><h1>Projects Report</h1>"
+                
+                if selected_accounts:
+                    placeholders = ','.join(['%s'] * len(selected_accounts))
+                    
+                    query = f"SELECT p.*, a.first, a.last, d.name FROM projects p \
+                    JOIN departments d ON p.department_id = d.id JOIN accounts a ON \
+                    p.professor_id = a.id WHERE title IN ({placeholders})"
 
-                cw.writerow(['id', 'title', 'description', 'link', 'status', 'department', 'professor_first', 'professor_last'])
+                    cursor.execute(query, tuple(selected_accounts))
+                    response = cursor.fetchall()
 
-                for row in response:
-                    cw.writerow(row)
+                    for row in response:
+                        print(row)
+                        html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                        <div class='content-field'><span class='viewer-label'>Title:</span> \
+                        <span>{row[1]}</span></div><div class='content-field'><span class='viewer-label'> \
+                        Description:</span><span>{row[2]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Link:</span><span>{row[4]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Status:</span><span>{row[6].capitalize()}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Department:</span><span>{row[9]}</span></div><div class='content-field'> \
+                        <span class='viewer-label'> \
+                        Professor:</span><span>{row[7]} {row[8]}</span></div>"
 
-                output = si.getvalue()
-
-                response = Response(output, mimetype="text/csv")
-                response.headers["Content-Disposition"] = "attachment; filename=projects.csv"
-                return response
+                else:
+                    html += "<p>No codes selected.</p>"
+                    
+                html += f"<div class='content-buttons'> \
+                <button type='button' class='back-button' onclick=\"window.location.href='/projects';\">Back \
+                </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+                
+                return html
         
     else:
         return redirect(url_for('home'))
@@ -615,37 +697,54 @@ def view_projects():
 @app.route("/status-codes", methods=['GET', 'POST'])
 def view_status_codes():
     if session['status'] == 'admin':
-        cursor.execute("CALL GetAllStatusCodes()")
-        response = cursor.fetchone()
-        while cursor.nextset():
-            pass
+        query = "SELECT * FROM status_codes"
+        cursor.execute(query)
+        response = cursor.fetchall()
 
         if request.method == "GET":
-            return f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
             <title>Status Codes Report</title><body><main><div class='viewer-container'><h1>Status Codes Report</h1> \
-            <div class='content-field'><span class='viewer-label'>Admin:</span> \
-            <span>{response[1]}</span></div><div class='content-field'><span class='viewer-label'>Professor:</span> \
-            <span>{response[2]}</span></div><div class='content-field'><span class='viewer-label'>Student:</span> \
-            {response[3]}<span></span><div class='content-buttons'><form method='POST'><button type='submit'> \
-            Export to CSV</button><br> \
+            <p>Use Ctrl + Click on Windows (or ⌘ + Click on Mac) to select multiple options.</p> \
+            <form method='POST'><select name='scode' id='scode' multiple>"
+            
+            for row in response:
+                html += f"<option value='{row[1]}'>{row[1].capitalize()}</option>"
+
+            html += f"</select><div class='content-buttons'><form method='POST'> \
+            <br><button type='submit'>Show Selected</button><br> \
             <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
             Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
             </body>"
+
+            return html
         
         elif request.method == "POST":
-            si = io.StringIO()
-            cw = csv.writer(si)
+            selected_accounts = request.form.getlist('scode')
+            
+            html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'>\
+            <title>Status Codes Report</title><body><main><div class='viewer-container'><h1>Status Codes Report</h1>"
+            
+            if selected_accounts:
+                placeholders = ','.join(['%s'] * len(selected_accounts))
+                query = f"SELECT * FROM status_codes WHERE account IN ({placeholders})"
+                cursor.execute(query, tuple(selected_accounts))
+                response = cursor.fetchall()
 
-            cw.writerow(['id', 'admin', 'professor', 'student'])
+                for row in response:
+                    print(row)
+                    html += f"<div class='row-heading'>ID: {row[0]}</div> \
+                    <div class='content-field'><span class='viewer-label'>Account Type:</span> \
+                    <span>{row[1].capitalize()}</span></div> \
+                    <div class='content-field'><span class='viewer-label'>Code:</span><span>{row[2]}</span></div>"
 
-            for row in response:
-                cw.writerow(row)
-
-            output = si.getvalue()
-
-            response = Response(output, mimetype="text/csv")
-            response.headers["Content-Disposition"] = "attachment; filename=status_codes.csv"
-            return response
+            else:
+                html += "<p>No codes selected.</p>"
+                
+            html += f"<div class='content-buttons'> \
+            <button type='button' class='back-button' onclick=\"window.location.href='/status-codes';\">Back \
+            </button></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer></body>"
+            
+            return html
         
     else:
         if 'id' in session:
