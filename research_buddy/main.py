@@ -54,12 +54,9 @@
 # TODO: Requirement 2: A report interface that allows a user (admin) to select which data to 
 # display in report (admin: report all users, professors: report all projects)
 
-import stat
-from flask import Flask, request, redirect, url_for, session, Response
+from flask import Flask, request, redirect, url_for, session
 import mysql.connector
 import json
-import csv
-import io
 
 with open('research_buddy/config.json') as config_file:
     db_config = json.load(config_file)
