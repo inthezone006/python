@@ -123,9 +123,11 @@ def signin():
 @app.route("/signup", methods=['GET', 'POST'])    
 def signup():
     if request.method == "GET":
-        query = "SELECT name FROM departments ORDER BY id ASC"
-        cursor.execute(query)
+        cursor.execute("CALL GetAllDepartmentNames()")
         responses = cursor.fetchall()
+
+        while cursor.nextset(): 
+            pass
 
         html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>Sign Up</title>" \
         "<main><div class='content-container'><h1>Sign Up</h1><p>Fields marked with an asterisk (*) are required.</p>" \
@@ -293,9 +295,9 @@ def view_profile():
                 html += "<option value='s.status'>Student Status</option>"
 
             html += f"</select><div class='content-buttons'><form method='POST'> \
-            <br><button type='submit'>Show Selected</button><br> \
-            <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+            Back</button><br><button type='submit'>Show Selected</button><br> \
+            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
             </body>"
 
             return html
@@ -361,9 +363,11 @@ def view_profile():
 @app.route("/accounts", methods=['GET', 'POST'])
 def view_accounts():
     if session['status'] == 'admin':
-        query = "SELECT email FROM accounts ORDER BY id ASC"
-        cursor.execute(query)
+        cursor.execute("CALL GetEmails()")
         response = cursor.fetchall()
+
+        while cursor.nextset(): 
+            pass
 
         if request.method == "GET":
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
@@ -375,9 +379,9 @@ def view_accounts():
                 html += f"<option value='{row[0]}'>{row[0]}</option>"
 
             html += f"</select><div class='content-buttons'><form method='POST'> \
-            <br><button type='submit'>Show Selected</button><br> \
-            <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+            Back</button><br><button type='submit'>Show Selected</button><br> \
+            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
             </body>"
 
             return html
@@ -439,9 +443,11 @@ def view_accounts():
 @app.route("/departments", methods=['GET', 'POST'])
 def view_departments():
     if session['status'] == 'admin':
-        query = "SELECT * FROM departments ORDER BY id ASC"
-        cursor.execute(query)
+        cursor.execute("CALL GetAllDepartmentNames()")
         response = cursor.fetchall()
+
+        while cursor.nextset(): 
+            pass
 
         if request.method == "GET":
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
@@ -450,12 +456,12 @@ def view_departments():
             <form method='POST'><select name='scode' id='scode' multiple>"
             
             for row in response:
-                html += f"<option value='{row[1]}'>{row[1]}</option>"
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
 
             html += f"</select><div class='content-buttons'><form method='POST'> \
-            <br><button type='submit'>Show Selected</button><br> \
-            <button type='button' class='back-button' onclick=\"window.location.href='/dashboard';\"> \
-            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            <br><button type='button' class='back-button' onclick=\"window.location.href='/dashboard';\"> \
+            Back</button><br><button type='submit'>Show Selected</button><br> \
+            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
             </body>"
 
             return html
@@ -513,9 +519,9 @@ def view_projects():
                     html += f"<option value='{row[1]}'>{row[1]}</option>"
 
                 html += f"</select><div class='content-buttons'><form method='POST'> \
-                <br><button type='submit'>Show Selected</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button><br><button type='submit'>Show Selected</button><br> \
+                </form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
                 </footer></body>"
 
                 return html
@@ -577,9 +583,9 @@ def view_projects():
                     html += f"<option value='{row[1]}'>{row[1]}</option>"
 
                 html += f"</select><div class='content-buttons'><form method='POST'> \
-                <br><button type='submit'>Show Selected</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button><br><button type='submit'>Show Selected</button><br> \
+                </form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
                 </footer></body>"
 
                 return html
@@ -641,9 +647,9 @@ def view_projects():
                     html += f"<option value='{row[0]}'>{row[0]}</option>"
 
                 html += f"</select><div class='content-buttons'><form method='POST'> \
-                <br><button type='submit'>Show Selected</button><br> \
-                <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-                Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
+                <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+                Back</button><br><button type='submit'>Show Selected</button><br> \
+                </form></div></div></main><footer>Account Status: {session['status'].capitalize()} \
                 </footer></body>"
 
                 return html
@@ -708,9 +714,9 @@ def view_status_codes():
                 html += f"<option value='{row[1]}'>{row[1].capitalize()}</option>"
 
             html += f"</select><div class='content-buttons'><form method='POST'> \
-            <br><button type='submit'>Show Selected</button><br> \
-            <button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
-            Back</button></form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
+            <br><button type='button' class='back-button' onclick=\"window.location.href='/home';\"> \
+            Back</button><br><button type='submit'>Show Selected</button><br> \
+            </form></div></div></main><footer>Account Status: {session['status'].capitalize()}</footer> \
             </body>"
 
             return html
@@ -770,9 +776,9 @@ def edit_profile():
             html += "<option value='student_status'>Student Status</option>"
         
         html += f"</select><input type='hidden' name='new_value' id='new_value' value=''><br><br> \
-        <div class='content-buttons'><button type='submit'>Change Setting</button> \
+        <div class='content-buttons'><button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
         <button type='button' class='btn-account' onclick='window.location.href='/delete/account/{session['id']}'> \
-        Delete Account<button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
+        Delete Account</button><button type='submit'>Change Setting</button> \
         </div></form></main><footer>Account Status: {session['status'].capitalize()}</footer><script> \
         function handlePrompt() {{ var newValue = prompt('Enter new value (limit: 35 characters): '); \
         if (newValue !== null && newValue.trim() !== '') {{ document.getElementById('new_value').value = newValue; \
@@ -817,7 +823,7 @@ def edit_profile():
 @app.route("/edit/departments", methods=['GET', 'POST'])
 def edit_departments():
     if session['status'] == 'admin':
-        cursor.execute("CALL GetAllDepartments()")
+        cursor.execute("CALL GetAllDepartmentNames()")
         response = cursor.fetchall()
 
         while cursor.nextset():
@@ -830,7 +836,7 @@ def edit_departments():
             <select name='sname' id='sname'>"
 
             for row in response:
-                html += f"<option value='{row[1]}'>{row[1]}</option>"
+                html += f"<option value='{row[0]}'>{row[0]}</option>"
             
             html += f"<input type='hidden' name='newName' id='newName' value=''><br><br></select> \
             <div class='content-buttons'> \
@@ -866,9 +872,11 @@ def edit_departments():
 @app.route("/edit/projects", methods=['GET', 'POST'])
 def edit_projects():
     if session['status'] == 'admin':
-        query = "SELECT title FROM projects"
-        cursor.execute(query)
+        cursor.execute("CALL GetProjectTitles()")
         response = cursor.fetchall()
+
+        while cursor.nextset():
+            pass
 
         if request.method == "GET":
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'> \
@@ -884,8 +892,7 @@ def edit_projects():
             Title</option><option value='description'>Description</option><option value='link'>Link</option> \
             <option value='status'>Status</option></select><div class='content-buttons'> \
             <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
-            <button type='button' class='btn-account' onclick=\"window.location.href='/new/projects';\"> \
-            Add New Project</button><button type='submit'>Change Project</button></div></form></main><footer> \
+            <button type='submit'>Change Project</button></div></form></main><footer> \
             Account Status: {session['status'].capitalize()}</footer><script> \
             function handlePrompt() {{ var new_value = prompt('Enter new value (max. 35 characters): '); \
             if (new_value !== null && new_value.trim() !== '') {{ document.getElementById('newValue').value=new_value; \
@@ -1021,11 +1028,13 @@ def edit_status_codes():
         
 @app.route("/new/projects", methods=['GET', 'POST'])
 def new_projects():
-    if session['status'] != 'student':
+    if session['status'] == 'professor':
         if request.method == "GET":
-            query = "SELECT name FROM departments ORDER BY id ASC"
-            cursor.execute(query)
+            cursor.execute("CALL GetAllDepartmentNames")
             responses = cursor.fetchall()
+
+            while cursor.nextset():
+                pass
 
             html = f"<link rel='stylesheet' href='{url_for('static', filename='styles.css')}'><title>New Project</title>" \
             "<main><div class='content-container'><h1>New Project</h1><p>Fields marked with an asterisk (*) are required." \
@@ -1066,7 +1075,7 @@ def new_projects():
 
             return "<script>window.alert('Project created successfully!');window.location.href = '/dashboard';</script>"
         
-    else:
+    elif session['status'] == 'student':
         query = "SELECT p.title FROM projects p WHERE p.department_id = %s AND p.id NOT IN (SELECT project_id " \
         "FROM projects_students WHERE student_id = %s);"
 
@@ -1101,6 +1110,14 @@ def new_projects():
             cursor.execute(query, (session['id'], response))
             cnx.commit()
             return "<script>alert('Successfully joined!'); window.location.href='/dashboard';</script>"
+        
+    else:
+        if 'id' in session:
+            return "<script>window.alert('You are not authorized to view this page.');" \
+            "window.location.href = '/dashboard';</script>"
+
+        else:
+            return redirect(url_for('home'))
 
 @app.route("/new/departments", methods=['GET', 'POST'])
 def new_departments():
@@ -1113,7 +1130,8 @@ def new_departments():
             <form method='POST'>*Name: <input type='text' name='name' maxlength='35'><br><br> \
             <div class='content-buttons'> \
             <button type='button' class='back-button' onclick=\"window.location.href='/home';\">Back</button> \
-            <button type='submit'>Sign Up</button></div></form></div></main><footer>Research Buddy v1.0a</footer>"
+            <button type='submit'>Create Department</button></div></form></div></main><footer>Research Buddy v1.0a \
+            </footer>"
         
         elif request.method == "POST":
             title = request.form.get('name')
