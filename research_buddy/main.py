@@ -188,6 +188,14 @@ def signup():
             return "<script>window.alert('Invalid email! Please try again.');" \
             "window.location.href = '/signup';</script>"
         
+        secret_code = int(request.form.get('secret_code', ''))
+        query = "SELECT code FROM status_codes WHERE account = %s"
+        cursor.execute(query, (account_type,))
+        response = cursor.fetchone()[0]
+        if secret_code != response:
+            return "<script>window.alert('Invalid code! Please try again.');" \
+            "window.location.href = '/signup';</script>"
+        
         cursor.execute("SELECT id FROM departments WHERE name = %s", (department,))
         dept_id = cursor.fetchone()[0]
         
